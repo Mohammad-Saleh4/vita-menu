@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Restaurant {
+  id              String     @id @default(uuid())
+  userId          String     @unique // Links securely to Supabase Auth user ID
+  slug            String     @unique // e.g., 'vitamin'
+  name            String
+  description     String?
+  logoUrl         String?
+  whatsappNumber  String     // The number that will receive the orders
+  currency        String     @default("L.L.")
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  categories      Category[]
+}
+
+model Category {
+  id            String     @id @default(uuid())
+  restaurantId  String
+  nameEn        String
+  nameAr        String
+  sortOrder     Int        @default(0) 
+  
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items         MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(uuid())
+  categoryId  String
+  nameEn      String
+  nameAr      String
+  description String?
+  price       Float
+  imageUrl    String?
+  isAvailable Boolean  @default(true) 
+  sortOrder   Int      @default(0)
+  
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
