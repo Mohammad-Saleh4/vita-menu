@@ -17,6 +17,8 @@ import {
   updateRestaurantWhatsApp,
   type RestaurantWithMenu,
 } from "@/actions/menu";
+import { uploadMenuItemPhoto } from "@/actions/upload";
+import { PhotoUploadField } from "@/components/dashboard/photo-upload-field";
 import { QRCodeGenerator } from "@/components/dashboard/QRCodeGenerator";
 
 type DashboardTab = "menu" | "qr";
@@ -46,6 +48,9 @@ export function DashboardClient({
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("menu");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   function refresh() {
     startTransition(() => {
@@ -89,10 +94,45 @@ export function DashboardClient({
     refresh();
   }
 
+  function clearPhotoSelection() {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  }
+
+  function handlePhotoChange(file: File | null, previewUrl: string | null) {
+    if (photoPreview && photoPreview !== previewUrl) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoFile(file);
+    setPhotoPreview(previewUrl);
+  }
+
   async function handleCreateMenuItem(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
     const form = new FormData(e.currentTarget);
+
+    let imageUrl: string | undefined;
+
+    if (photoFile) {
+      setIsUploading(true);
+      const uploadForm = new FormData();
+      uploadForm.append("photo", photoFile);
+      uploadForm.append("restaurantId", restaurant.id);
+
+      const uploadResult = await uploadMenuItemPhoto(uploadForm);
+      setIsUploading(false);
+
+      if (!uploadResult.success) {
+        setFormError(uploadResult.error);
+        return;
+      }
+
+      imageUrl = uploadResult.data.url;
+    }
 
     const result = await createMenuItem({
       categoryId: selectedCategoryId,
@@ -100,7 +140,7 @@ export function DashboardClient({
       nameAr: String(form.get("nameAr")),
       description: String(form.get("description") || "") || undefined,
       price: Number(form.get("price")),
-      imageUrl: String(form.get("imageUrl") || "") || undefined,
+      imageUrl,
     });
 
     if (!result.success) {
@@ -108,6 +148,7 @@ export function DashboardClient({
       return;
     }
 
+    clearPhotoSelection();
     setItemModalOpen(false);
     refresh();
   }
@@ -115,7 +156,13 @@ export function DashboardClient({
   function openItemModal(categoryId: string) {
     setSelectedCategoryId(categoryId);
     setFormError(null);
+    clearPhotoSelection();
     setItemModalOpen(true);
+  }
+
+  function closeItemModal() {
+    clearPhotoSelection();
+    setItemModalOpen(false);
   }
 
   return (
@@ -310,7 +357,7 @@ export function DashboardClient({
       )}
 
       {itemModalOpen && (
-        <Modal title="Add menu item" onClose={() => setItemModalOpen(false)}>
+        <Modal title="Add menu item" onClose={closeItemModal}>
           <form onSubmit={handleCreateMenuItem} className="space-y-4">
             <Field label="Name (English)" name="nameEn" required />
             <Field label="Name (Arabic)" name="nameAr" required />
@@ -323,11 +370,15 @@ export function DashboardClient({
               min="0"
               required
             />
-            <Field label="Image URL" name="imageUrl" type="url" />
+            <PhotoUploadField
+              preview={photoPreview}
+              onFileChange={handlePhotoChange}
+            />
             {formError && <p className="text-sm text-red-600">{formError}</p>}
             <ModalActions
-              isPending={isPending}
-              onCancel={() => setItemModalOpen(false)}
+              isPending={isPending || isUploading}
+              submitLabel={isUploading ? "Uploading photo…" : "Save"}
+              onCancel={closeItemModal}
             />
           </form>
         </Modal>
@@ -390,16 +441,19 @@ function Field({
 function ModalActions({
   onCancel,
   isPending,
+  submitLabel = "Save",
 }: {
   onCancel: () => void;
   isPending: boolean;
+  submitLabel?: string;
 }) {
   return (
     <div className="flex justify-end gap-2 pt-2">
       <button
         type="button"
         onClick={onCancel}
-        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700"
+        disabled={isPending}
+        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 disabled:opacity-50"
       >
         Cancel
       </button>
@@ -408,7 +462,7 @@ function ModalActions({
         disabled={isPending}
         className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        Save
+        {submitLabel}
       </button>
     </div>
   );
