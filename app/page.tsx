@@ -18,7 +18,7 @@ export default function Home() {
           <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-200">
             <Store className="size-5" />
           </span>
-          <span>Vitamin Menu</span>
+          <span>Vita Menu</span>
         </Link>
         <Link
           href="/login"
@@ -159,7 +159,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-zinc-200 px-5 py-6 text-center text-sm text-zinc-500 sm:px-8">
-        Vitamin Menu — digital menus for modern restaurants.
+        Vita Menu — digital menus for modern restaurants.
       </footer>
     </div>
   );

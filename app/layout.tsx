@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Vitamin Menu | Digital menus for modern restaurants",
-    template: "%s | Vitamin Menu",
+    default: "Vita Menu | Digital menus for modern restaurants",
+    template: "%s | Vita Menu",
   },
   description:
     "Create polished QR menus your guests can browse and order from in seconds.",
