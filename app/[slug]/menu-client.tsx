@@ -33,11 +33,13 @@ export function MenuClient({
 
   useEffect(() => {
     setRestaurant({
+      id: restaurant.id,
       slug: restaurant.slug,
       whatsappNumber: restaurant.whatsappNumber,
       currency: restaurant.currency,
     });
   }, [
+    restaurant.id,
     restaurant.slug,
     restaurant.whatsappNumber,
     restaurant.currency,
