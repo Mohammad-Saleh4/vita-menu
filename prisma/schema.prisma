@@ -20,6 +20,7 @@ model Restaurant {
   updatedAt       DateTime   @updatedAt
 
   categories      Category[]
+  orders          Order[]
 }
 
 model Category {
@@ -44,5 +45,33 @@ model MenuItem {
   isAvailable Boolean  @default(true) 
   sortOrder   Int      @default(0)
   
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  restaurantId String
+  totalAmount  Float
+  status       String      @default("WHATSAPP_SENT")
+  createdAt    DateTime    @default(now())
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        OrderItem[]
+
+  @@index([restaurantId, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  menuItemId  String
+  quantity    Int
+  priceAtTime Float
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([menuItemId])
 }
