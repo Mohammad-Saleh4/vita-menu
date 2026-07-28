@@ -1,5 +1,6 @@
 "use client";
 
+import { logWhatsAppOrder } from "@/actions/analytics";
 import { X, Minus, Plus, MessageCircle } from "lucide-react";
 import {
   getItemName,
@@ -293,6 +294,7 @@ export function CartPanel({
   const deliveryAddress = useCartStore((s) => s.deliveryAddress);
   const deliveryNotes = useCartStore((s) => s.deliveryNotes);
   const whatsappNumber = useCartStore((s) => s.whatsappNumber);
+  const restaurantId = useCartStore((s) => s.restaurantId);
 
   const closeCart = useCartStore((s) => s.closeCart);
   const setView = useCartStore((s) => s.setView);
@@ -317,7 +319,7 @@ export function CartPanel({
   }
 
   function handleSendWhatsApp() {
-    if (!whatsappNumber || items.length === 0) return;
+    if (!whatsappNumber || items.length === 0 || !restaurantId) return;
 
     if (
       orderType === "Delivery" &&
@@ -341,6 +343,16 @@ export function CartPanel({
     );
     const phone = formatWhatsAppNumber(whatsappNumber);
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+    void logWhatsAppOrder({
+      restaurantId,
+      cartItems: items.map((item) => ({
+        menuItemId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalAmount: grandTotal,
+    });
 
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -381,6 +393,7 @@ export function CartPanel({
               onClick={handleSendWhatsApp}
               disabled={
                 !whatsappNumber ||
+                !restaurantId ||
                 (orderType === "Delivery" &&
                   (!customerName.trim() ||
                     !customerPhone.trim() ||
