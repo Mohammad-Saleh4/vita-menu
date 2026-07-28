@@ -14,6 +14,7 @@ export type CartView = "cart" | "checkout";
 export type OrderType = "Dine-in" | "Delivery" | "Takeaway";
 
 type CartState = {
+  restaurantId: string | null;
   restaurantSlug: string | null;
   whatsappNumber: string | null;
   currency: string;
@@ -27,6 +28,7 @@ type CartState = {
   deliveryAddress: string;
   deliveryNotes: string;
   setRestaurant: (data: {
+    id: string;
     slug: string;
     whatsappNumber: string;
     currency: string;
@@ -53,6 +55,7 @@ type CartState = {
 };
 
 const tenantDefaults = {
+  restaurantId: null as string | null,
   restaurantSlug: null as string | null,
   whatsappNumber: null as string | null,
   currency: "L.L.",
@@ -76,18 +79,19 @@ export const useCartStore = create<CartState>()(
       ...tenantDefaults,
       ...cartDefaults,
 
-      setRestaurant: ({ slug, whatsappNumber, currency }) => {
+      setRestaurant: ({ id, slug, whatsappNumber, currency }) => {
         set((state) => {
           if (state.restaurantSlug && state.restaurantSlug !== slug) {
             return {
               ...tenantDefaults,
               ...cartDefaults,
+              restaurantId: id,
               restaurantSlug: slug,
               whatsappNumber,
               currency,
             };
           }
-          return { restaurantSlug: slug, whatsappNumber, currency };
+          return { restaurantId: id, restaurantSlug: slug, whatsappNumber, currency };
         });
       },
 
@@ -177,6 +181,7 @@ export const useCartStore = create<CartState>()(
       name: "vitamin-menu-cart",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        restaurantId: state.restaurantId,
         restaurantSlug: state.restaurantSlug,
         whatsappNumber: state.whatsappNumber,
         currency: state.currency,
